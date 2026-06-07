@@ -1,0 +1,304 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
+
+enum Role {
+  USER
+  MEMBER
+  PLAYER
+  COACH
+  ADMIN
+}
+
+enum EventType {
+  MATCHDAY
+  JERSEY_LAUNCH
+  FAN_MEETUP
+  YOUTH_TRIAL
+  CLUB_ANNOUNCEMENT
+  TROPHY_CELEBRATION
+  TRAINING
+  TOURNAMENT
+  TRIAL
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+enum MembershipStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
+enum AchievementType {
+  LEAGUE_TITLE
+  CUP_WIN
+  PROMOTION
+  FAIR_PLAY
+  TOP_SCORER
+  COMMUNITY
+  OTHER
+}
+
+enum GalleryCategory {
+  MATCH
+  TRAINING
+  EVENT
+  TROPHY
+  TEAM
+  OTHER
+}
+
+enum SessionStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+  CANCELLED
+}
+
+// ─────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────
+
+model User {
+  id        String  @id @default(cuid())
+  name      String
+  email     String  @unique
+  password  String
+  role      Role    @default(USER)
+  avatarUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  player               Player?
+  orders               Order[]
+  membership           Membership?
+  eventRegistrations   EventRegistration[]
+  sessionRegistrations TrainingRegistration[]
+}
+
+// ─────────────────────────────────────────
+// PLAYER
+// ─────────────────────────────────────────
+
+model Player {
+  id       String @id @default(cuid())
+  userId   String @unique
+  user     User   @relation(fields: [userId], references: [id])
+
+  position String?
+  jerseyNo Int?
+  age      Int?
+  height   Float?
+  weight   Float?
+  bio      String?
+  imageUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────
+// MEMBERSHIP
+// ─────────────────────────────────────────
+
+model Membership {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  status     MembershipStatus @default(PENDING)
+  startDate  DateTime?
+  endDate    DateTime?
+  monthlyFee Float            @default(200)
+  currency   String           @default("BDT")
+  autoRenew  Boolean          @default(false)
+
+  payments MembershipPayment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MembershipPayment {
+  id           String     @id @default(cuid())
+  membershipId String
+  membership   Membership @relation(fields: [membershipId], references: [id])
+
+  amount      Float
+  currency    String   @default("BDT")
+  paidAt      DateTime @default(now())
+  method      String?
+  reference   String?
+  periodStart DateTime
+  periodEnd   DateTime
+
+  createdAt DateTime @default(now())
+}
+
+// ─────────────────────────────────────────
+// EVENTS
+// ─────────────────────────────────────────
+
+model Event {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  imageUrl    String?
+  location    String
+  startDate   DateTime
+  endDate     DateTime?
+  type        EventType
+  isPublic    Boolean   @default(true)
+  capacity    Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  registrations EventRegistration[]
+}
+
+model EventRegistration {
+  id      String @id @default(cuid())
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id])
+  userId  String
+  user    User   @relation(fields: [userId], references: [id])
+
+  registeredAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+}
+
+// ─────────────────────────────────────────
+// TRAINING SESSIONS
+// ─────────────────────────────────────────
+
+model TrainingSession {
+  id          String        @id @default(cuid())
+  title       String
+  description String?
+  location    String
+  date        DateTime
+  duration    Int
+  capacity    Int           @default(20)
+  status      SessionStatus @default(UPCOMING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  registrations TrainingRegistration[]
+}
+
+model TrainingRegistration {
+  id        String          @id @default(cuid())
+  sessionId String
+  session   TrainingSession @relation(fields: [sessionId], references: [id])
+  userId    String
+  user      User            @relation(fields: [userId], references: [id])
+
+  registeredAt DateTime @default(now())
+
+  @@unique([sessionId, userId])
+}
+
+// ─────────────────────────────────────────
+// SHOP
+// ─────────────────────────────────────────
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  imageUrl    String?
+  images      String[] @default([])
+  price       Float
+  stock       Int      @default(0)
+  featured    Boolean  @default(false)
+  category    String?
+  sizes       String[] @default([])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderItems OrderItem[]
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  totalAmount Float
+  status      OrderStatus @default(PENDING)
+  address     String?
+  phone       String?
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  size      String?
+  price     Float
+}
+
+// ─────────────────────────────────────────
+// GALLERY
+// ─────────────────────────────────────────
+
+model Gallery {
+  id       String          @id @default(cuid())
+  title    String?
+  caption  String?
+  imageUrl String
+  category GalleryCategory @default(OTHER)
+  featured Boolean         @default(false)
+  takenAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────
+// ACHIEVEMENTS
+// ─────────────────────────────────────────
+
+model Achievement {
+  id          String          @id @default(cuid())
+  title       String
+  description String?
+  type        AchievementType @default(OTHER)
+  imageUrl    String?
+  date        DateTime
+  featured    Boolean         @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
