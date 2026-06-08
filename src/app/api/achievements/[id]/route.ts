@@ -4,15 +4,21 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
+
   if (!session || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
-    await prisma.achievement.delete({ where: { id: params.id } });
+    await prisma.achievement.delete({
+      where: { id },
+    });
+
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json(
@@ -24,19 +30,24 @@ export async function DELETE(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
+
   if (!session || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
     const body = await req.json();
+
     const achievement = await prisma.achievement.update({
-      where: { id: params.id },
+      where: { id },
       data: body,
     });
+
     return NextResponse.json(achievement);
   } catch {
     return NextResponse.json(

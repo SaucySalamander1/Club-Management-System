@@ -31,6 +31,6 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "src/types/**/*.d.ts"
-  ],
+,     "prisma.config.ts.bak"  ],
   "exclude": ["node_modules"]
 }

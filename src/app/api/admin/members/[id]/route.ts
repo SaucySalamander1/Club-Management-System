@@ -4,19 +4,22 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
+
   if (!session || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { id } = await params;
 
   try {
     const body = await req.json();
     const { status, startDate, endDate } = body;
 
     const membership = await prisma.membership.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         status,
         startDate: startDate ? new Date(startDate) : undefined,
@@ -24,12 +27,16 @@ export async function PATCH(
       },
       include: {
         user: {
-          select: { id: true, name: true, email: true, role: true },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
         },
       },
     });
 
-    // if activated update user role to MEMBER
     if (status === "ACTIVE") {
       await prisma.user.update({
         where: { id: membership.user.id },
@@ -37,7 +44,6 @@ export async function PATCH(
       });
     }
 
-    // if cancelled or expired revert role to USER
     if (status === "CANCELLED" || status === "EXPIRED") {
       await prisma.user.update({
         where: { id: membership.user.id },
@@ -57,12 +63,15 @@ export async function PATCH(
 // record a payment
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
+
   if (!session || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { id } = await params;
 
   try {
     const body = await req.json();
@@ -70,7 +79,7 @@ export async function POST(
 
     const payment = await prisma.membershipPayment.create({
       data: {
-        membershipId: params.id,
+        membershipId: id,
         amount,
         method,
         reference,

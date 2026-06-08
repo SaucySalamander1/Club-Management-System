@@ -4,16 +4,21 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   const session = await auth();
+
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   const user = session.user as any;
 
-  // only members can register
   if (user.role !== "MEMBER" && user.role !== "ADMIN") {
     return NextResponse.json(
       { error: "Only members can register for events" },
@@ -22,19 +27,26 @@ export async function POST(
   }
 
   try {
-    // check event exists
     const event = await prisma.event.findUnique({
-      where: { id: params.id },
+      where: {
+        id,
+      },
       include: {
-        _count: { select: { registrations: true } },
+        _count: {
+          select: {
+            registrations: true,
+          },
+        },
       },
     });
 
     if (!event) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Event not found" },
+        { status: 404 }
+      );
     }
 
-    // check capacity
     if (
       event.capacity &&
       event._count.registrations >= event.capacity
@@ -45,11 +57,10 @@ export async function POST(
       );
     }
 
-    // check already registered
     const existing = await prisma.eventRegistration.findUnique({
       where: {
         eventId_userId: {
-          eventId: params.id,
+          eventId: id,
           userId: user.id,
         },
       },
@@ -62,18 +73,27 @@ export async function POST(
       );
     }
 
-    // create registration
     const registration = await prisma.eventRegistration.create({
       data: {
-        eventId: params.id,
+        eventId: id,
         userId: user.id,
       },
     });
 
-    return NextResponse.json(registration, { status: 201 });
-  } catch {
+    return NextResponse.json(registration, {
+      status: 201,
+    });
+  } catch (error) {
+    console.error("REGISTER ERROR:", error);
+
     return NextResponse.json(
-      { error: "Failed to register for event" },
+      {
+        error: "Failed to register for event",
+        details:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      },
       { status: 500 }
     );
   }
@@ -81,11 +101,17 @@ export async function POST(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   const session = await auth();
+
   if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
   const user = session.user as any;
@@ -94,16 +120,26 @@ export async function DELETE(
     await prisma.eventRegistration.delete({
       where: {
         eventId_userId: {
-          eventId: params.id,
+          eventId: id,
           userId: user.id,
         },
       },
     });
 
-    return NextResponse.json({ success: true });
-  } catch {
+    return NextResponse.json({
+      success: true,
+    });
+  } catch (error) {
+    console.error("UNREGISTER ERROR:", error);
+
     return NextResponse.json(
-      { error: "Failed to unregister from event" },
+      {
+        error: "Failed to unregister from event",
+        details:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      },
       { status: 500 }
     );
   }

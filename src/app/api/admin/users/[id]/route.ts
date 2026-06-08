@@ -4,17 +4,21 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth();
+
   if (!session || (session.user as any).role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { id } = await params;
+
   try {
     const body = await req.json();
+
     const user = await prisma.user.update({
-      where: { id: params.id },
+      where: { id },
       data: { role: body.role },
       select: {
         id: true,
@@ -23,6 +27,7 @@ export async function PATCH(
         role: true,
       },
     });
+
     return NextResponse.json(user);
   } catch {
     return NextResponse.json(
