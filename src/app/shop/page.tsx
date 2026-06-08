@@ -11,11 +11,13 @@ const CATEGORIES = ["All", "Jersey", "Kit", "Training", "Accessories"];
 export default async function ShopPage({
   searchParams,
 }: {
-  searchParams: { category?: string };
+  searchParams: Promise<{ category?: string }>;
 }) {
+  const params = await searchParams;
+
   const category =
-    searchParams.category && searchParams.category !== "All"
-      ? searchParams.category
+    params.category && params.category !== "All"
+      ? params.category
       : undefined;
 
   const products = await prisma.product.findMany({
@@ -55,8 +57,8 @@ export default async function ShopPage({
                 <a key={cat}
                 href={cat === "All" ? "/shop" : `/shop?category=${cat}`}
                 className={`rounded-full px-5 py-2 text-sm font-medium transition ${
-                  (cat === "All" && !searchParams.category) ||
-                  cat === searchParams.category
+                  (cat === "All" && !params.category) ||
+                  cat === params.category
                     ? "bg-amber-400 text-black"
                     : "border border-border text-muted-foreground hover:bg-accent hover:text-foreground"
                 }`}
