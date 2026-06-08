@@ -35,6 +35,7 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   const user = session?.user;
+  const isAdmin = (user as any)?.role === "ADMIN";
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -95,7 +96,7 @@ export default function Navbar() {
           {/* RIGHT SIDE */}
           <div className="flex items-center gap-2">
 
-            {/* CART BUTTON ONLY */}
+            {/* CART */}
             <CartDrawer />
 
             {/* THEME TOGGLE */}
@@ -147,39 +148,47 @@ export default function Navbar() {
                   className="w-48 border-border bg-card text-card-foreground"
                 >
                   <div className="px-3 py-2">
-                    <p className="text-sm font-semibold text-foreground">{user.name}</p>
-                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                    <p className="text-sm font-semibold text-foreground">
+                      {user.name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {user.email}
+                    </p>
                   </div>
 
                   <DropdownMenuSeparator className="bg-border" />
 
+                  {/* DASHBOARD — role based */}
                   <DropdownMenuItem asChild>
-                    <Link href="/dashboard" className="cursor-pointer">
-                      Dashboard
+                    <Link
+                      href={isAdmin ? "/admin" : "/dashboard"}
+                      className="cursor-pointer"
+                    >
+                      {isAdmin ? "Admin Panel" : "Dashboard"}
                     </Link>
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem asChild>
-                    <Link href="/membership" className="cursor-pointer">
-                      Membership
-                    </Link>
-                  </DropdownMenuItem>
+                  {/* MEMBER ONLY LINKS */}
+                  {!isAdmin && (
+                    <>
+                      <DropdownMenuItem asChild>
+                        <Link href="/membership" className="cursor-pointer">
+                          Membership
+                        </Link>
+                      </DropdownMenuItem>
 
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard/orders" className="cursor-pointer">
-                      My Orders
-                    </Link>
-                  </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link
+                          href="/dashboard/orders"
+                          className="cursor-pointer"
+                        >
+                          My Orders
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
 
                   <DropdownMenuSeparator className="bg-border" />
-
-                  {(user as any)?.role === "ADMIN" && (
-                    <DropdownMenuItem asChild>
-                      <Link href="/admin" className="cursor-pointer text-amber-400">
-                        Admin Panel
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
 
                   <DropdownMenuItem
                     onClick={() => signOut({ callbackUrl: "/" })}
@@ -243,12 +252,21 @@ export default function Navbar() {
                 </Link>
               </>
             ) : (
-              <button
-                onClick={() => signOut({ callbackUrl: "/" })}
-                className="rounded-full border border-destructive/30 py-3.5 text-center text-sm font-semibold text-destructive transition hover:bg-destructive/10"
-              >
-                Logout
-              </button>
+              <div className="flex flex-col gap-3">
+                <Link
+                  href={isAdmin ? "/admin" : "/dashboard"}
+                  onClick={() => setMobileOpen(false)}
+                  className="rounded-full border border-border py-3.5 text-center text-sm font-semibold text-foreground transition hover:bg-accent"
+                >
+                  {isAdmin ? "Admin Panel" : "Dashboard"}
+                </Link>
+                <button
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="rounded-full border border-destructive/30 py-3.5 text-center text-sm font-semibold text-destructive transition hover:bg-destructive/10"
+                >
+                  Logout
+                </button>
+              </div>
             )}
           </div>
         </div>

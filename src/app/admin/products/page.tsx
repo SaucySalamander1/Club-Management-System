@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Trash2, Plus, Loader2, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
+import ImageUpload from "@/components/ui/ImageUpload";
 
 type Product = {
   id: string;
@@ -185,16 +186,15 @@ export default function AdminProductsPage() {
             />
           </div>
 
+          {/* IMAGE UPLOAD */}
           <div className="flex flex-col gap-1.5 md:col-span-2">
             <label className="text-sm font-medium text-foreground">
-              Image URL
+              Product Image
             </label>
-            <input
-              type="url"
-              placeholder="https://..."
+            <ImageUpload
               value={form.imageUrl}
-              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-              className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-amber-500 focus:outline-none"
+              onChange={(url) => setForm({ ...form, imageUrl: url })}
+              bucket="products"
             />
           </div>
 
@@ -273,7 +273,6 @@ export default function AdminProductsPage() {
               key={product.id}
               className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4"
             >
-              {/* image */}
               <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-accent">
                 {product.imageUrl ? (
                   <Image
@@ -289,7 +288,6 @@ export default function AdminProductsPage() {
                 )}
               </div>
 
-              {/* info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="font-bold text-foreground truncate">
@@ -314,7 +312,6 @@ export default function AdminProductsPage() {
                 )}
               </div>
 
-              {/* delete */}
               <button
                 onClick={() => handleDelete(product.id)}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:border-red-500/30 hover:bg-red-500/10 hover:text-red-500"

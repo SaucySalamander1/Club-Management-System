@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Trash2, Plus, Loader2 } from "lucide-react";
 import { GalleryCategory } from "@prisma/client";
 import { toast } from "sonner";
+import ImageUpload from "@/components/ui/ImageUpload";
 
 const CATEGORIES: GalleryCategory[] = [
   "MATCH", "TRAINING", "EVENT", "TROPHY", "TEAM", "OTHER",
@@ -44,7 +45,7 @@ export default function AdminGalleryPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.imageUrl) return toast.error("Image URL is required");
+    if (!form.imageUrl) return toast.error("Please upload or enter an image");
     setSubmitting(true);
     try {
       const res = await fetch("/api/gallery", {
@@ -96,17 +97,15 @@ export default function AdminGalleryPage() {
         </h2>
         <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
 
-          <div className="flex flex-col gap-1.5">
+          {/* IMAGE UPLOAD */}
+          <div className="flex flex-col gap-1.5 md:col-span-2">
             <label className="text-sm font-medium text-foreground">
-              Image URL *
+              Photo *
             </label>
-            <input
-              type="url"
-              placeholder="https://..."
+            <ImageUpload
               value={form.imageUrl}
-              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
-              className="rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-amber-500 focus:outline-none"
-              required
+              onChange={(url) => setForm({ ...form, imageUrl: url })}
+              bucket="gallery"
             />
           </div>
 
@@ -155,7 +154,7 @@ export default function AdminGalleryPage() {
             </select>
           </div>
 
-          <div className="flex items-center gap-3 md:col-span-2">
+          <div className="flex items-center gap-3">
             <input
               type="checkbox"
               id="featured"
@@ -226,7 +225,6 @@ export default function AdminGalleryPage() {
                 </span>
               </div>
 
-              {/* delete button */}
               <button
                 onClick={() => handleDelete(img.id)}
                 className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition hover:bg-red-500 group-hover:opacity-100"
