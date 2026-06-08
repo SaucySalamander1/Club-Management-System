@@ -1,80 +1,102 @@
 import Link from "next/link";
-import { Trophy, Users, Calendar, ShoppingBag, ArrowRight, Star, Flame } from "lucide-react";
+import Image from "next/image";
+import { prisma } from "@/lib/prisma";
+import {
+  Trophy,
+  Users,
+  Calendar,
+  ShoppingBag,
+  ArrowRight,
+  Star,
+} from "lucide-react";
+import HeroSection from "@/components/home/HeroSection";
 
-export default function HomePage() {
+const ACHIEVEMENT_ICONS: Record<string, string> = {
+  LEAGUE_TITLE: "🏆",
+  CUP_WIN: "🥇",
+  PROMOTION: "⬆️",
+  FAIR_PLAY: "🤝",
+  TOP_SCORER: "⚽",
+  COMMUNITY: "❤️",
+  OTHER: "⭐",
+};
+
+const EVENT_ICONS: Record<string, string> = {
+  MATCHDAY: "⚽",
+  JERSEY_LAUNCH: "👕",
+  FAN_MEETUP: "🤝",
+  YOUTH_TRIAL: "🌟",
+  CLUB_ANNOUNCEMENT: "📢",
+  TROPHY_CELEBRATION: "🏆",
+  TRAINING: "🏃",
+  TOURNAMENT: "🥇",
+  TRIAL: "🎯",
+};
+
+export default async function HomePage() {
+  const [products, events, achievements, gallery] = await Promise.all([
+    prisma.product.findMany({
+      where: { featured: true },
+      orderBy: { createdAt: "desc" },
+      take: 4,
+    }),
+    prisma.event.findMany({
+      where: {
+        isPublic: true,
+        startDate: { gte: new Date() },
+      },
+      orderBy: { startDate: "asc" },
+      take: 3,
+    }),
+    prisma.achievement.findMany({
+      where: { featured: true },
+      orderBy: { date: "desc" },
+      take: 3,
+    }),
+    prisma.gallery.findMany({
+      where: { featured: true },
+      orderBy: { createdAt: "desc" },
+      take: 6,
+    }),
+  ]);
+
+  // fallback to latest if no featured
+  const displayProducts =
+    products.length > 0
+      ? products
+      : await prisma.product.findMany({
+          orderBy: { createdAt: "desc" },
+          take: 4,
+        });
+
+  const displayGallery =
+    gallery.length > 0
+      ? gallery
+      : await prisma.gallery.findMany({
+          orderBy: { createdAt: "desc" },
+          take: 6,
+        });
+
+  const displayAchievements =
+    achievements.length > 0
+      ? achievements
+      : await prisma.achievement.findMany({
+          orderBy: { date: "desc" },
+          take: 3,
+        });
+
+  // separate gallery for homepage grid (first 4)
+  const galleryGrid = displayGallery.slice(0, 4);
+
   return (
     <main className="min-h-screen bg-background text-foreground">
 
       {/* ── HERO ── */}
-      <section className="relative flex min-h-screen flex-col items-start justify-center overflow-hidden px-6 md:px-16">
-
-        {/* background grid */}
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] bg-[size:60px_60px] opacity-40" />
-
-        {/* amber glow */}
-        <div className="pointer-events-none absolute -top-40 left-1/2 h-[500px] w-[500px] -translate-x-1/2 rounded-full bg-amber-500/10 blur-[120px]" />
-
-        <div className="relative z-10 max-w-4xl">
-
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-1.5">
-            <Flame size={14} className="text-amber-400" />
-            <span className="text-xs font-medium uppercase tracking-widest text-amber-500">
-              Official Football Club · Savar, Bangladesh
-            </span>
-          </div>
-
-          <h1 className="mb-6 text-6xl font-black leading-[1.05] tracking-tight md:text-8xl">
-            SAVAR
-            <span className="block text-amber-400">CF</span>
-          </h1>
-
-          <p className="mb-10 max-w-xl text-lg leading-relaxed text-muted-foreground">
-            More than a club. A community built on passion, discipline,
-            and the beautiful game. Join us — on the pitch and off it.
-          </p>
-
-          <div className="flex flex-wrap gap-4">
-            <Link
-              href="/membership"
-              className="rounded-full bg-amber-400 px-8 py-3.5 font-semibold text-black transition hover:bg-amber-300"
-            >
-              Become a Member
-            </Link>
-            <Link
-              href="/shop"
-              className="rounded-full border border-border px-8 py-3.5 font-semibold transition hover:bg-accent"
-            >
-              Shop Jerseys
-            </Link>
-          </div>
-        </div>
-
-        {/* stats bar */}
-        <div className="relative z-10 mt-20 flex flex-wrap gap-12">
-          {[
-            { value: "12K+", label: "Club Fans" },
-            { value: "25+", label: "Events Hosted" },
-            { value: "3×", label: "Trophies Won" },
-            { value: "2025", label: "New Era" },
-          ].map((stat) => (
-            <div key={stat.label}>
-              <p className="text-4xl font-black text-foreground">{stat.value}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{stat.label}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* scroll hint */}
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-muted-foreground/40">
-          <div className="h-10 w-px bg-gradient-to-b from-transparent to-muted-foreground/40" />
-          <span className="text-xs uppercase tracking-widest">Scroll</span>
-        </div>
-      </section>
+      <HeroSection images={displayGallery} />
 
       {/* ── ABOUT ── */}
       <section className="border-t border-border px-6 py-24 md:px-16">
         <div className="mx-auto grid max-w-6xl gap-16 md:grid-cols-2 md:items-center">
-
           <div>
             <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-amber-500">
               About the Club
@@ -100,7 +122,6 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {/* feature grid */}
           <div className="grid grid-cols-2 gap-4">
             {[
               { icon: Users, title: "Community", desc: "A tight-knit group of football lovers" },
@@ -180,33 +201,47 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            {[
-              { name: "Home Kit 2026", price: "৳1,200", tag: "New" },
-              { name: "Away Kit 2026", price: "৳1,200", tag: "New" },
-              { name: "Training Jersey", price: "৳800", tag: null },
-              { name: "Club Polo", price: "৳600", tag: "Popular" },
-            ].map((product) => (
-              <Link
-                key={product.name}
-                href="/shop"
-                className="group rounded-2xl border border-border bg-card p-4 transition hover:border-amber-500/30"
-              >
-                <div className="mb-4 aspect-square rounded-xl bg-accent flex items-center justify-center relative overflow-hidden">
-                  <ShoppingBag size={32} className="text-muted-foreground/20" />
-                  {product.tag && (
-                    <span className="absolute top-2 left-2 rounded-full bg-amber-400 px-2.5 py-0.5 text-xs font-semibold text-black">
-                      {product.tag}
-                    </span>
-                  )}
-                </div>
-                <p className="font-semibold text-card-foreground group-hover:text-amber-500 transition">
-                  {product.name}
-                </p>
-                <p className="mt-1 text-amber-500 font-bold">{product.price}</p>
-              </Link>
-            ))}
-          </div>
+          {displayProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <ShoppingBag size={48} className="mb-4 text-muted-foreground/20" />
+              <p className="text-muted-foreground">No products yet — check back soon!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              {displayProducts.map((product) => (
+                <Link
+                  key={product.id}
+                  href={`/shop/${product.id}`}
+                  className="group rounded-2xl border border-border bg-card p-4 transition hover:border-amber-500/30"
+                >
+                  <div className="mb-4 aspect-square rounded-xl bg-accent flex items-center justify-center relative overflow-hidden">
+                    {product.imageUrl ? (
+                      <Image
+                        src={product.imageUrl}
+                        alt={product.name}
+                        fill
+                        className="object-cover transition duration-500 group-hover:scale-105"
+                        sizes="(max-width: 768px) 50vw, 25vw"
+                      />
+                    ) : (
+                      <ShoppingBag size={32} className="text-muted-foreground/20" />
+                    )}
+                    {product.featured && (
+                      <span className="absolute top-2 left-2 rounded-full bg-amber-400 px-2.5 py-0.5 text-xs font-semibold text-black">
+                        Featured
+                      </span>
+                    )}
+                  </div>
+                  <p className="font-semibold text-card-foreground group-hover:text-amber-500 transition line-clamp-1">
+                    {product.name}
+                  </p>
+                  <p className="mt-1 text-amber-500 font-bold">
+                    ৳{product.price.toLocaleString()}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          )}
 
           <div className="mt-6 md:hidden">
             <Link
@@ -225,7 +260,7 @@ export default function HomePage() {
           <div className="mb-12 flex items-end justify-between">
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-amber-500">
-                Whats On
+                What's On
               </p>
               <h2 className="text-3xl font-black md:text-4xl">
                 Upcoming Events
@@ -239,34 +274,41 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            {[
-              { type: "Tournament", title: "Savar Summer Cup 2026", date: "July 15, 2026", location: "Savar Stadium" },
-              { type: "Training", title: "Open Training Session", date: "June 20, 2026", location: "Club Ground" },
-              { type: "Trial", title: "Youth Trials U-18", date: "June 28, 2026", location: "Academy Ground" },
-            ].map((event) => (
-              <Link
-                key={event.title}
-                href="/events"
-                className="group rounded-2xl border border-border bg-card p-6 transition hover:border-amber-500/30 hover:bg-amber-500/5"
-              >
-                <span className="mb-4 inline-block rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-500">
-                  {event.type}
-                </span>
-                <h3 className="mb-3 font-bold text-lg text-card-foreground group-hover:text-amber-500 transition">
-                  {event.title}
-                </h3>
-                <div className="space-y-1 text-sm text-muted-foreground">
-                  <p>📅 {event.date}</p>
-                  <p>📍 {event.location}</p>
-                </div>
-              </Link>
-            ))}
-          </div>
+          {events.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Calendar size={48} className="mb-4 text-muted-foreground/20" />
+              <p className="text-muted-foreground">No upcoming events — check back soon!</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-3">
+              {events.map((event) => (
+                <Link
+                  key={event.id}
+                  href="/events"
+                  className="group rounded-2xl border border-border bg-card p-6 transition hover:border-amber-500/30 hover:bg-amber-500/5"
+                >
+                  <span className="mb-4 inline-block rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-500">
+                    {EVENT_ICONS[event.type]} {event.type.replace(/_/g, " ")}
+                  </span>
+                  <h3 className="mb-3 font-bold text-lg text-card-foreground group-hover:text-amber-500 transition line-clamp-2">
+                    {event.title}
+                  </h3>
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p>📅 {new Date(event.startDate).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}</p>
+                    <p>📍 {event.location}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* ── ACHIEVEMENTS TEASER ── */}
+      {/* ── ACHIEVEMENTS ── */}
       <section className="border-t border-border px-6 py-24 md:px-16">
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 flex items-end justify-between">
@@ -286,28 +328,40 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-3">
-            {[
-              { trophy: "🏆", title: "Savar League Champions", year: "2024" },
-              { trophy: "🥈", title: "Regional Cup Runners-up", year: "2023" },
-              { trophy: "⭐", title: "Fair Play Award", year: "2023" },
-            ].map((item) => (
-              <div
-                key={item.title}
-                className="rounded-2xl border border-border bg-card p-6 flex items-center gap-4"
-              >
-                <span className="text-4xl">{item.trophy}</span>
-                <div>
-                  <p className="font-bold text-card-foreground">{item.title}</p>
-                  <p className="text-sm text-amber-500">{item.year}</p>
+          {displayAchievements.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Trophy size={48} className="mb-4 text-muted-foreground/20" />
+              <p className="text-muted-foreground">Achievements coming soon!</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-3">
+              {displayAchievements.map((item) => (
+                <div
+                  key={item.id}
+                  className="rounded-2xl border border-border bg-card p-6 flex items-center gap-4"
+                >
+                  <span className="text-4xl shrink-0">
+                    {ACHIEVEMENT_ICONS[item.type] ?? "⭐"}
+                  </span>
+                  <div>
+                    <p className="font-bold text-card-foreground">{item.title}</p>
+                    <p className="text-sm text-amber-500">
+                      {new Date(item.date).getFullYear()}
+                    </p>
+                    {item.description && (
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-1">
+                        {item.description}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* ── GALLERY TEASER ── */}
+      {/* ── GALLERY ── */}
       <section className="border-t border-border px-6 py-24 md:px-16">
         <div className="mx-auto max-w-6xl">
           <div className="mb-12 flex items-end justify-between">
@@ -327,21 +381,58 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            {["Match Day", "Training", "Trophy", "Team"].map((cat, i) => (
-              <Link
-                key={cat}
-                href="/gallery"
-                className={`group relative overflow-hidden rounded-2xl bg-accent ${i === 0 ? "md:col-span-2 md:row-span-2" : ""}`}
-              >
-                <div className={`flex items-center justify-center ${i === 0 ? "aspect-square md:h-full" : "aspect-square"}`}>
-                  <span className="text-xs text-muted-foreground/50 uppercase tracking-widest">{cat}</span>
-                </div>
-                <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/60 to-transparent p-4 opacity-0 group-hover:opacity-100 transition">
-                  <span className="text-sm font-semibold text-white">{cat}</span>
-                </div>
-              </Link>
-            ))}
+          {galleryGrid.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-5xl mb-4">📷</p>
+              <p className="text-muted-foreground">Photos coming soon!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              {galleryGrid.map((img, i) => (
+                <Link
+                  key={img.id}
+                  href="/gallery"
+                  className={`group relative overflow-hidden rounded-2xl bg-accent ${
+                    i === 0 ? "md:col-span-2 md:row-span-2" : ""
+                  }`}
+                >
+                  <div className="relative aspect-square w-full overflow-hidden">
+                    <Image
+                      src={img.imageUrl}
+                      alt={img.title ?? "Gallery"}
+                      fill
+                      className="object-cover transition duration-500 group-hover:scale-105"
+                      sizes={
+                        i === 0
+                          ? "(max-width: 768px) 50vw, 50vw"
+                          : "(max-width: 768px) 50vw, 25vw"
+                      }
+                    />
+                  </div>
+                  <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/60 to-transparent p-4 opacity-0 group-hover:opacity-100 transition">
+                    <div>
+                      {img.title && (
+                        <p className="text-sm font-semibold text-white">
+                          {img.title}
+                        </p>
+                      )}
+                      <span className="text-xs text-white/70">
+                        {img.category}
+                      </span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-6 md:hidden">
+            <Link
+              href="/gallery"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition"
+            >
+              View all photos <ArrowRight size={14} />
+            </Link>
           </div>
         </div>
       </section>

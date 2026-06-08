@@ -64,7 +64,7 @@ export default function Navbar() {
         className={`fixed left-0 top-0 z-50 w-full transition-all duration-300 overflow-visible ${
           scrolled
             ? "border-b border-border bg-background/95 backdrop-blur-xl"
-            : "bg-transparent"
+            : "bg-gradient-to-b from-black/50 to-transparent"
         }`}
       >
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
@@ -72,7 +72,9 @@ export default function Navbar() {
           {/* LOGO */}
           <Link
             href="/"
-            className="flex items-center gap-2 text-2xl font-black tracking-widest text-foreground"
+            className={`flex items-center gap-2 text-2xl font-black tracking-widest transition ${
+              scrolled ? "text-foreground" : "text-white"
+            }`}
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-400">
               <Flame size={16} className="text-black" />
@@ -86,7 +88,11 @@ export default function Navbar() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="rounded-full px-4 py-2 text-sm text-muted-foreground transition hover:bg-accent hover:text-foreground"
+                className={`rounded-full px-4 py-2 text-sm transition ${
+                  scrolled
+                    ? "text-muted-foreground hover:bg-accent hover:text-foreground"
+                    : "text-white/80 hover:bg-white/10 hover:text-white"
+                }`}
               >
                 {link.label}
               </Link>
