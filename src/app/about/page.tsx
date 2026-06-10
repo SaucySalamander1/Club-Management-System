@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import { prisma } from "@/lib/prisma";
 import {
   Trophy,
   Users,
@@ -44,16 +46,11 @@ const VALUES = [
   },
 ];
 
-const TEAM = [
-  { name: "Club Chairman", role: "Leadership" },
-  { name: "Head Coach", role: "Technical Staff" },
-  { name: "Assistant Coach", role: "Technical Staff" },
-  { name: "Team Manager", role: "Management" },
-  { name: "Club Secretary", role: "Administration" },
-  { name: "Fitness Coach", role: "Technical Staff" },
-];
+export default async function AboutPage() {
+  const staff = await prisma.clubStaff.findMany({
+    orderBy: { order: "asc" },
+  });
 
-export default function AboutPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
 
@@ -128,7 +125,6 @@ export default function AboutPage() {
               </div>
             </div>
 
-            {/* info cards */}
             <div className="grid grid-cols-2 gap-4">
               {[
                 {
@@ -164,9 +160,7 @@ export default function AboutPage() {
                     <Icon size={16} className="text-amber-500" />
                   </div>
                   <p className="text-xs text-muted-foreground">{title}</p>
-                  <p className="text-xl font-black text-foreground">
-                    {value}
-                  </p>
+                  <p className="text-xl font-black text-foreground">{value}</p>
                   <p className="text-xs text-muted-foreground">{desc}</p>
                 </div>
               ))}
@@ -203,31 +197,65 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* STAFF */}
+      {/* CLUB MANAGEMENT & STAFF */}
       <section className="border-b border-border px-6 py-24 md:px-16">
         <div className="mx-auto max-w-6xl">
           <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-amber-500">
             The People
           </p>
-          <h2 className="mb-12 text-4xl font-black">Club Staff</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            {TEAM.map((member) => (
-              <div
-                key={member.name}
-                className="flex items-center gap-4 rounded-2xl border border-border bg-card p-5"
-              >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-400/10">
-                  <Flame size={18} className="text-amber-500" />
+          <h2 className="mb-12 text-4xl font-black">
+            Club Management & Staff
+          </h2>
+
+          {staff.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <p className="text-5xl mb-4">👥</p>
+              <p className="text-muted-foreground">
+                Staff information coming soon.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {staff.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex items-start gap-4 rounded-2xl border border-border bg-card p-6 transition hover:border-amber-500/30"
+                >
+                  {/* PHOTO */}
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-accent">
+                    {member.imageUrl ? (
+                      <Image
+                        src={member.imageUrl}
+                        alt={member.name}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-amber-400/10">
+                        <Flame size={20} className="text-amber-500" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* INFO */}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-black text-foreground text-lg leading-tight">
+                      {member.name}
+                    </p>
+                    <p className="mt-0.5 text-sm font-semibold text-amber-500">
+                      {member.title}
+                    </p>
+                    {member.bio && (
+                      <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+                        {member.bio}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <p className="font-bold text-foreground">{member.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {member.role}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

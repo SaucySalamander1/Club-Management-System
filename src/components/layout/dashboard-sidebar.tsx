@@ -12,6 +12,7 @@ import {
   Image,
   Trophy,
   CreditCard,
+  UserCircle,
 } from "lucide-react";
 import { Flame } from "lucide-react";
 
@@ -36,6 +37,7 @@ const links = [
       { name: "Events", href: "/admin/events", icon: Calendar },
       { name: "Gallery", href: "/admin/gallery", icon: Image },
       { name: "Achievements", href: "/admin/achievements", icon: Trophy },
+      { name: "Club Staff", href: "/admin/staff", icon: UserCircle },
     ],
   },
   {
